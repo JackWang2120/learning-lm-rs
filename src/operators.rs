@@ -71,19 +71,32 @@ pub fn masked_softmax(y: &mut Tensor<f32>) {
 }
 
 pub fn rms_norm(y: &mut Tensor<f32>, x: &Tensor<f32>, w: &Tensor<f32>, epsilon: f32) {
-    todo!("实现 rms_norm，计算前做一些必要的检查会帮助你后续调试")
+    let len = y.size();
+    assert!(len == x.size());
+    let _y = unsafe { y.data_mut() };
+    let _x = x.data();
+    let _w = w.data();
+    let mean_square = _x.iter().map(|&v| v * v).sum::<f32>() / len as f32;
+    let rms = (mean_square + epsilon).sqrt();
+    println!("len of y: {}",len);
+    for i in 0..len {
+        _y[i] = _x[i] / rms * _w[i % _w.len()];
+        println!("_y {}: {}",i,_y[i]);
+    }
 }
-
 // y = silu(x) * y
 // hint: this is an element-wise operation
 pub fn swiglu(y: &mut Tensor<f32>, x: &Tensor<f32>) {
-    // let len = y.size();
-    // assert!(len == x.size());
+    let len = y.size();
+    assert!(len == x.size());
 
-    // let _y = unsafe { y.data_mut() };
-    // let _x = x.data();
-
-    todo!("实现 silu，这里给了一些前期准备工作的提示，你可以参考")
+    let _y = unsafe { y.data_mut() };
+    let _x = x.data();
+    for i in 0..len{
+        _y[i] *= _x[i] / (1. + (-_x[i]).exp());
+        //println!("{}, {}", _y[i], _x[i]);
+    }
+   // Silu function implementation
 }
 
 // C = beta * C + alpha * A @ B^T
