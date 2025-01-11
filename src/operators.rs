@@ -71,8 +71,33 @@ pub fn masked_softmax(y: &mut Tensor<f32>) {
 }
 
 pub fn rms_norm(y: &mut Tensor<f32>, x: &Tensor<f32>, w: &Tensor<f32>, epsilon: f32) {
-   
+    let shape = x.shape();
+    let size = x.size();
+    let dim = shape.len();
+    println!("size:{},dim:{}", size,dim);
+    let data_x = x.data();
+    let data_w = w.data();
+    let data_y = unsafe { y.data_mut() };
+
+    let mut strides = vec![1; dim];
+    for i in (0..dim - 1).rev() {
+        strides[i] = strides[i + 1] * shape[i + 1];
+    }
+
+    for i in 0..dim {
+        let offset = i * strides[0];
+        let mut norm = 0.0;
+        for j in 0..shape[i] {
+            norm += data_x[offset + j] * data_x[offset + j];
+        }
+        norm = (norm / dim as f32 + epsilon).sqrt();
+        for j in 0..shape[i] {
+            data_y[offset + j] = data_x[offset + j] * data_w[j] / norm;
+        }
+    }
 }
+   
+
 // y = silu(x) * y
 // hint: this is an element-wise operation
 pub fn swiglu(y: &mut Tensor<f32>, x: &Tensor<f32>) {
